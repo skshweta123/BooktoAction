@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book to Action - Premium Mobile UI</title>
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --primary: #4066ff;
+      --primary-soft: #e9efff;
+      --shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", "SF Pro Text", "Segoe UI", Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top right, #f1f5ff 0%, var(--bg) 55%);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .phone {
+      width: 390px;
+      max-width: 100%;
+      height: 844px;
+      background: var(--surface);
+      border-radius: 36px;
+      border: 1px solid #dbe4ff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      padding: 18px 20px 20px;
+      background: var(--surface);
+      overflow-y: auto;
+      transform: translateX(100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 280ms ease, opacity 280ms ease;
+    }
+
+    .screen.active {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .screen.exit-left {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+
+    #home {
+      overflow-y: auto;
+    }
+
+    .hero {
+      margin-top: 2px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 8px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #3d3f45 0%, #23252b 100%);
+      color: #ffffff;
+      display: grid;
+      place-items: center;
+      font-size: 1.8rem;
+    }
+
+    h1 {
+      font-size: 1.55rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+      margin-bottom: 12px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      color: #1e293b;
+      font-size: 0.9rem;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: 150ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chip:hover {
+      border-color: #c5d0f8;
+    }
+
+    .chip.active {
+      background: var(--primary-soft);
+      color: #1e3a8a;
+      border-color: #c7d4ff;
+      font-weight: 600;
+    }
+
+    .chip-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chip-icon {
+      width: 20px;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+    .chip-arrow {
+      color: #94a3b8;
+      font-size: 1rem;
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+    }
+
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 0.95rem;
+      color: #0f172a;
+      background: #fff;
+    }
+
+    .button {
+      position: static;
+      margin-top: 10px;
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #4c72ff 0%, #3a5ef0 100%);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 13px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(64, 102, 255, 0.35);
+    }
+
+    #home .button {
+      margin-top: 4px;
+    }
+
+    .loading-wrap {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 18px;
+      padding-top: 120px;
+    }
+
+    .spinner {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      border: 7px solid #dbe6ff;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      text-align: center;
+      font-size: 1rem;
+      line-height: 1.55;
+      padding: 0 8px;
+      color: #1e293b;
+    }
+
+    .book-meta {
+      background: #f8faff;
+      border: 1px solid #e2eaff;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .book-meta p {
+      line-height: 1.65;
+      color: #334155;
+      font-size: 0.95rem;
+    }
+
+    .result-header {
+      margin-top: 12px;
+      margin-bottom: 14px;
+    }
+
+    .results-topbar {
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .top-link {
+      border: 0;
+      background: transparent;
+      color: #334155;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 2px 0;
+    }
+
+    .home-icon {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #334155;
+      border-radius: 10px;
+      min-width: 34px;
+      height: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+      scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #334155;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      border-color: #d8dffa;
+      background: #f8faff;
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+
+    .section-card h3 {
+      font-size: 0.98rem;
+      margin-bottom: 8px;
+      color: #0f172a;
+    }
+
+    .section-card p,
+    .section-card li {
+      color: #334155;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    ul {
+      padding-left: 16px;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .back-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #334155;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.88rem;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <section id="home" class="screen active">
+      <div class="hero">
+        <div class="logo" aria-hidden="true">&#128214;</div>
+        <h1>Book to Action</h1>
+        <p class="subtitle">Turn books into action</p>
+      </div>
+
+      <div class="card">
+        <h2>What do you want to improve?</h2>
+        <div class="options">
+          <button class="chip active" data-goal="Productivity">
+            <span class="chip-left"><span class="chip-icon">&#9889;</span>Productivity</span>
+            <span class="chip-arrow">&rsaquo;</span>
+          </button>
+          <button class="chip" data-goal="Leadership">
+            <span class="chip-left"><span class="chip-icon">&#127942;</span>Leadership</span>
+            <span class="chip-arrow">&rsaquo;</span>
+          </button>
+          <button class="chip" data-goal="Career Growth">
+            <span class="chip-left"><span class="chip-icon">&#128200;</span>Career Growth</span>
+            <span class="chip-arrow">&rsaquo;</span>
+          </button>
+          <button class="chip" data-goal="Personal Development">
+            <span class="chip-left"><span class="chip-icon">&#128640;</span>Personal Development</span>
+            <span class="chip-arrow">&rsaquo;</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Select Book</h2>
+        <label for="book">Choose one</label>
+        <select id="book">
+          <option>Atomic Habits</option>
+        </select>
+      </div>
+
+      <button id="startBtn" class="button">Start</button>
+    </section>
+
+    <section id="loading" class="screen">
+      <div class="loading-wrap">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="loading-text">Analyzing your book and creating your action plan</p>
+        <div class="book-meta">
+          <p><strong>Book:</strong> Atomic Habit</p>
+          <p><strong>Author:</strong> James Clear</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="results" class="screen">
+      <div class="results-topbar">
+        <button id="resultsBack" class="top-link">&larr; Back</button>
+        <button id="resultsHome" class="home-icon" aria-label="Go to Home">&#8962;</button>
+      </div>
+
+      <div class="result-header">
+        <h1>Action Plan Ready</h1>
+        <p class="subtitle">Your personalized output from Atomic Habits</p>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Result sections">
+        <button class="tab active" data-tab="summary" role="tab" aria-selected="true">Summary</button>
+        <button class="tab" data-tab="ideas" role="tab" aria-selected="false">Key Ideas</button>
+        <button class="tab" data-tab="framework" role="tab" aria-selected="false">Framework</button>
+        <button class="tab" data-tab="plan" role="tab" aria-selected="false">Plan</button>
+        <button class="tab" data-tab="mistakes" role="tab" aria-selected="false">Mistakes</button>
+      </div>
+
+      <article class="card section-card tab-panel active" data-panel="summary">
+        <h3>3-minute summary</h3>
+        <p>Small daily habits compound into significant long-term outcomes. Focus on systems, not goals, and make positive actions obvious, attractive, easy, and satisfying.</p>
+      </article>
+
+      <article class="card section-card tab-panel" data-panel="ideas">
+        <h3>Key ideas</h3>
+        <ul>
+          <li>Identity-based habits are more durable than outcome-based motivation.</li>
+          <li>Environment design shapes behavior faster than willpower.</li>
+          <li>Tiny gains repeated consistently outperform short intense effort.</li>
+        </ul>
+      </article>
+
+      <article class="card section-card tab-panel" data-panel="framework">
+        <h3>Framework</h3>
+        <p><strong>4 Laws:</strong> Make it obvious, make it attractive, make it easy, make it satisfying.</p>
+      </article>
+
+      <article class="card section-card tab-panel" data-panel="plan">
+        <h3>Action plan</h3>
+        <ul>
+          <li>Choose one keystone habit for the next 14 days.</li>
+          <li>Stack it to an existing routine and reduce startup friction.</li>
+          <li>Track completion daily and review weekly for adjustments.</li>
+        </ul>
+      </article>
+
+      <article class="card section-card tab-panel" data-panel="mistakes">
+        <h3>Mistakes to avoid</h3>
+        <ul>
+          <li>Trying to change too many habits at once.</li>
+          <li>Relying on motivation without system design.</li>
+          <li>Skipping measurement and reflection.</li>
+        </ul>
+      </article>
+
+    </section>
+  </main>
+
+  <script>
+    const home = document.getElementById("home");
+    const loading = document.getElementById("loading");
+    const results = document.getElementById("results");
+    const startBtn = document.getElementById("startBtn");
+    const resultsBack = document.getElementById("resultsBack");
+    const resultsHome = document.getElementById("resultsHome");
+    const chips = document.querySelectorAll(".chip");
+    const tabs = document.querySelectorAll(".tab");
+    const panels = document.querySelectorAll(".tab-panel");
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        chips.forEach((el) => el.classList.remove("active"));
+        chip.classList.add("active");
+      });
+    });
+
+    const showScreen = (next, current) => {
+      current.classList.add("exit-left");
+      setTimeout(() => {
+        current.classList.remove("active", "exit-left");
+        next.classList.add("active");
+      }, 250);
+    };
+
+    startBtn.addEventListener("click", () => {
+      showScreen(loading, home);
+      setTimeout(() => {
+        loading.classList.remove("active");
+        results.classList.add("active");
+      }, 2200);
+    });
+
+    const goHome = () => {
+      results.classList.remove("active");
+      home.classList.add("active");
+    };
+
+    resultsBack.addEventListener("click", goHome);
+    resultsHome.addEventListener("click", goHome);
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const target = tab.dataset.tab;
+
+        tabs.forEach((t) => {
+          t.classList.remove("active");
+          t.setAttribute("aria-selected", "false");
+        });
+        panels.forEach((panel) => panel.classList.remove("active"));
+
+        tab.classList.add("active");
+        tab.setAttribute("aria-selected", "true");
+        results.querySelector(`[data-panel="${target}"]`).classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>
