@@ -6,7 +6,12 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "web:build": "expo export --platform web",
+    "web:preview": "npx serve dist",
+    "build:android:preview": "eas build -p android --profile preview",
+    "build:android:prod": "eas build -p android --profile production",
+    "build:ios:prod": "eas build -p ios --profile production"
   },
   "dependencies": {
     "@expo-google-fonts/manrope": "^0.4.2",

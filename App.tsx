@@ -122,6 +122,9 @@ export default function App() {
       setSelectionError("Please select 1 to 3 goals.");
       return;
     }
+    setActiveTab("summary");
+    setSpeakingGoalId(null);
+    Speech.stop();
     setScreen("loading");
   };
 
@@ -589,10 +592,12 @@ const styles = StyleSheet.create({
   },
   authModeRow: {
     flexDirection: "row",
-    backgroundColor: "#eaf0ff",
+    backgroundColor: "#dfe7ff",
     borderRadius: 12,
-    padding: 4,
+    padding: 5,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#c2d0ff",
   },
   authModeButton: {
     flex: 1,
@@ -601,17 +606,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   authModeButtonActive: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#4f68ea",
     borderWidth: 1,
-    borderColor: "#d2dcff",
+    borderColor: "#4a63e5",
+    shadowColor: "#4f68ea",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   authModeText: {
-    color: "#6b78ab",
+    color: "#52639f",
     fontSize: 13,
     fontFamily: "Manrope_600SemiBold",
   },
   authModeTextActive: {
-    color: "#2f3f86",
+    color: "#ffffff",
     fontFamily: "Manrope_700Bold",
   },
   authInput: {
@@ -876,17 +886,23 @@ const styles = StyleSheet.create({
   },
   homeBtn: {
     borderWidth: 1,
-    borderColor: "#d7dfff",
-    borderRadius: 10,
-    width: 36,
-    height: 30,
+    borderColor: "#4d67e8",
+    borderRadius: 12,
+    width: 46,
+    height: 38,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#4f68ea",
+    shadowColor: "#4f68ea",
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 5,
   },
   homeBtnText: {
-    fontSize: 18,
-    color: "#3a477e",
+    fontSize: 20,
+    color: "#ffffff",
+    fontFamily: "Manrope_700Bold",
   },
   resultHeader: {
     backgroundColor: "#f4f6ff",
