@@ -1,0 +1,141 @@
+Requirements
+Create a clean, premium mobile app UI for an app called “Book to Action”.
+
+Purpose:
+Help users turn books into actionable strategy, frameworks, and execution plans.
+
+Style:
+Minimal, elegant, modern, high readability, soft colors, lots of white space.
+
+Screens to create:
+Screen 1: Home Screen
+App title: Book to Action
+Subtitle: Turn books into action
+Goal Selection
+Title: What do you want to improve?
+Options:
+-Productivity
+-Leadership
+-Career Growth
+-Personal Development
+Title: Select Book
+Show dropdown (for now, show only one option Atomic Habits)
+Button: Start
+
+Screen 2: Loading Screen
+Show progress indicator
+Message: Analyzing your book and creating your action plan
+Show book name: <selected by user from the drop down> e.g. Atomic Habit
+Show author name: <Name of the author of the selected book> e.g. James Clear
+
+Screen 3: Result Screen (with following sections. You decide the best display format - scrollable, tab, step-wise, or any other way))
+Sections:
+-3-minute summary
+-Key ideas
+-Framework
+-Action plan
+-Mistakes to avoid
+
+Design requirements:
+
+Mobile-first layout
+Use cards for each section
+Clean typography
+Clear section separation
+Smooth navigation between screens
+
+User flow & details
+User login to the app -> Comes to the home page -> select one or multiple goal (max 3) -> select the book from the drop down -> Click Start -> Results are shown
+User does not get to upload a book. The books are saved from my end. When user selects the book from dropdown, further contents are generated based on the pdf of the book. 
+Before implementing, suggest me the process and best way to implement, e.g. where could the book be stored? How the contents will be generated - will AI/ML pipeline be used or what is the simplest way. Suggest me the MVP approach so that I can publish the app with 10 books first. 
+
+If you require any information or clarification from my end - please ask. Once I confirm the implementation approach, only then proceed.
+
+Response from Cursor
+Perfect scope for an MVP.
+For launching fast with 10 books, the best approach is:
+
+Recommended MVP Architecture
+Mobile app: Expo React Native (already started)
+Auth: Email/Google login via Firebase Auth
+Backend data: Firestore
+Book files: Firebase Storage (PDFs private, admin-uploaded only)
+Result generation: Precomputed content (not live AI per user request)
+This gives you speed, low cost, and predictable output quality.
+
+Why Precomputed Is Best for MVP
+Live AI generation on every click adds latency, cost, and inconsistency.
+With 10 books and fixed result sections, you can generate once and serve instantly.
+Easier QA before app-store submission.
+Data Model (Simple and Scalable)
+Use these collections:
+
+books
+id, title, author, pdfPath, status
+goals
+id, name (Productivity, Leadership, etc.)
+book_goal_content
+key: bookId_goalId
+fields:
+summary3min
+keyIdeas[]
+framework
+actionPlan[]
+mistakesToAvoid[]
+version, updatedAt
+User flow storage:
+
+users/{userId}/sessions
+selected goals (max 3), selected book, timestamp
+Content Generation Process (MVP)
+Step 1: Ingestion (admin-side only)
+Upload PDF to storage
+Save metadata in books
+Step 2: Offline content preparation
+For each book x goal pair:
+
+Extract text from PDF (script)
+Generate structured sections via AI once
+Human review/edit (important for quality)
+Save final JSON in book_goal_content
+Step 3: Runtime app behavior
+User logs in
+Selects up to 3 goals + one book
+App calls API/Firestore query
+Returns precomputed sections instantly
+Render in tabs
+No user uploads, no runtime AI required.
+
+Goal Selection Logic (max 3)
+UI allows multi-select chips
+Enforce max 3 client-side
+Also enforce max 3 in backend request validation (for safety)
+API Layer (optional but recommended)
+Even with Firestore, add a thin API (Cloud Functions) later:
+
+GET /books
+POST /results with {bookId, goalIds[]}
+Returns merged response for tabs
+For MVP, app can read Firestore directly (faster to ship), then migrate to API for stricter control.
+
+MVP Rollout Plan (10 books)
+Finalize goal taxonomy (5–8 goals)
+Upload 10 PDFs + metadata
+Precompute content JSON for each book x goal
+Add login + home flow + results tabs
+Add analytics (which books/goals selected)
+Test on Android/iOS
+Store assets + privacy policy + submit to stores
+Later (Post-MVP)
+Hybrid mode: generate missing book-goal combos on demand and cache
+Personalization using user profile/history
+Better ranking of action plans by user behavior
+If you confirm this approach, I’ll implement in this order:
+
+auth + data schema + seeded content format,
+max-3 goal selection + book dropdown wiring,
+results fetch and tab rendering from backend content.
+Before implementation, I need just 2 decisions from you:
+
+Login options for MVP: Email only or Email + Google?
+For initial 10 books, do you want me to use manual curated JSON seed files first (fastest), then connect Firebase next?
