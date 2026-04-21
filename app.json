@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "book-to-action-app",
-    "slug": "book-to-action-app",
+    "name": "Book to Action",
+    "slug": "book-to-action",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
