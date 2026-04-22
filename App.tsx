@@ -2,13 +2,6 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import * as Speech from "expo-speech";
 import {
-  Manrope_400Regular,
-  Manrope_500Medium,
-  Manrope_600SemiBold,
-  Manrope_700Bold,
-  useFonts,
-} from "@expo-google-fonts/manrope";
-import {
   Animated,
   Platform,
   Pressable,
@@ -21,9 +14,9 @@ import {
 } from "react-native";
 import {
   BOOKS,
-  BOOK_GOAL_RESULTS,
   GOALS,
   TAB_META,
+  getResultForSelection,
   type GoalId,
   type GoalResult,
   type ResultTabId,
@@ -32,13 +25,6 @@ import {
 type Screen = "login" | "home" | "loading" | "results";
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
-    Manrope_400Regular,
-    Manrope_500Medium,
-    Manrope_600SemiBold,
-    Manrope_700Bold,
-  });
-
   const [screen, setScreen] = useState<Screen>("login");
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("demo@booktoaction.app");
@@ -50,15 +36,18 @@ export default function App() {
   });
   const [selectedGoals, setSelectedGoals] = useState<GoalId[]>(["productivity"]);
   const [selectedBookId, setSelectedBookId] = useState(BOOKS[0].id);
-  const [activeTab, setActiveTab] = useState<ResultTabId>("summary");
+  const [activeTab, setActiveTab] = useState<ResultTabId>("framework");
   const [bookMenuOpen, setBookMenuOpen] = useState(false);
   const [selectionError, setSelectionError] = useState("");
-  const [speakingGoalId, setSpeakingGoalId] = useState<GoalId | null>(null);
+  const [speakingGoalId, setSpeakingGoalId] = useState<string | null>(null);
   const rotateAnim = useState(new Animated.Value(0))[0];
 
   const selectedBook = BOOKS.find((book) => book.id === selectedBookId) ?? BOOKS[0];
-  const contentByGoal = BOOK_GOAL_RESULTS[selectedBook.id];
-  const primaryGoalId = selectedGoals[0];
+  const selectedGoalLabels = selectedGoals
+    .map((goalId) => GOALS.find((goal) => goal.id === goalId)?.label ?? "")
+    .filter(Boolean);
+  const resultForSelection = getResultForSelection(selectedBook.id, selectedGoals);
+  const speakingKey = `${selectedBook.id}:${selectedGoals.join("+")}`;
 
   useEffect(() => {
     if (screen !== "loading") {
@@ -122,7 +111,7 @@ export default function App() {
       setSelectionError("Please select 1 to 3 goals.");
       return;
     }
-    setActiveTab("summary");
+    setActiveTab("framework");
     setSpeakingGoalId(null);
     Speech.stop();
     setScreen("loading");
@@ -166,8 +155,12 @@ export default function App() {
     setScreen("home");
   };
 
-  const speakSummary = (goalId: GoalId, summary: string[], quotes: string[]) => {
-    if (speakingGoalId === goalId) {
+  const handleLogout = () => {
+    setScreen("login");
+  };
+
+  const speakSummary = (summaryKey: string, summary: string[], quotes: string[]) => {
+    if (speakingGoalId === summaryKey) {
       Speech.stop();
       setSpeakingGoalId(null);
       return;
@@ -175,7 +168,7 @@ export default function App() {
 
     const text = [...summary, "Notable quotes.", ...quotes].join(" ");
     Speech.stop();
-    setSpeakingGoalId(goalId);
+    setSpeakingGoalId(summaryKey);
     Speech.speak(text, {
       language: "en",
       pitch: 1.0,
@@ -201,10 +194,6 @@ export default function App() {
     if (tab === "plan") return "#cf6f2e";
     return "#c0466d";
   };
-
-  if (!fontsLoaded) {
-    return null;
-  }
 
   return (
     <SafeAreaView style={styles.root}>
@@ -301,6 +290,9 @@ export default function App() {
             </View>
             <Text style={styles.title}>Book to Action</Text>
             <Text style={styles.subtitle}>Turn books into action</Text>
+            <Pressable style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </Pressable>
           </View>
 
           <View style={styles.card}>
@@ -404,9 +396,7 @@ export default function App() {
             <Text style={styles.resultAuthor}>by {selectedBook.author}</Text>
             <Text style={styles.resultGoal}>
               Your plan for{" "}
-              {selectedGoals
-                .map((goalId) => GOALS.find((goal) => goal.id === goalId)?.label ?? "")
-                .join(", ")}
+              {selectedGoalLabels.join(", ")}
             </Text>
           </View>
 
@@ -437,8 +427,8 @@ export default function App() {
 
           <View style={styles.resultsGrid}>
             {(() => {
-              const goalMeta = GOALS.find((goal) => goal.id === primaryGoalId);
-              const result = primaryGoalId ? contentByGoal?.[primaryGoalId] : undefined;
+              const goalMetaLabel = selectedGoalLabels.join(" + ");
+              const result = resultForSelection;
               const lines = result ? getSectionLines(result, activeTab) : ["No content found for this goal."];
               const tabTitle = TAB_META.find((tab) => tab.id === activeTab)?.title ?? "Result";
               return (
@@ -456,14 +446,14 @@ export default function App() {
                 >
                   <View style={styles.sectionTitleRow}>
                     <Text style={styles.sectionTitle}>
-                      {tabTitle} - {goalMeta?.label}
+                      {tabTitle} - {goalMetaLabel}
                     </Text>
-                    {activeTab === "summary" && result && primaryGoalId ? (
+                    {activeTab === "summary" && result ? (
                       <Pressable
-                        onPress={() => speakSummary(primaryGoalId, result.summary, result.quotes)}
-                        style={[styles.audioIconButton, speakingGoalId === primaryGoalId && styles.audioIconButtonActive]}
+                        onPress={() => speakSummary(speakingKey, result.summary, result.quotes)}
+                        style={[styles.audioIconButton, speakingGoalId === speakingKey && styles.audioIconButtonActive]}
                       >
-                        <Text style={styles.audioIcon}>{speakingGoalId === primaryGoalId ? "⏹" : "🔊"}</Text>
+                        <Text style={styles.audioIcon}>{speakingGoalId === speakingKey ? "⏹" : "🔊"}</Text>
                       </Pressable>
                     ) : null}
                   </View>
@@ -486,26 +476,42 @@ export default function App() {
                     </>
                   ) : activeTab === "framework" || activeTab === "plan" ? (
                     lines.map((line) => {
-                      const splitIndex = line.indexOf(":");
-                      if (splitIndex === -1) {
+                      if (line.trim() === "---") {
+                        return <View key={line} style={styles.hierarchyDivider} />;
+                      }
+
+                      const isSubPoint = line.startsWith("  - ");
+                      if (isSubPoint) {
                         return (
-                          <Text key={line} style={styles.bulletText}>
-                            • {line}
-                          </Text>
+                          <View key={line} style={styles.hierarchySubRow}>
+                            <Text style={styles.hierarchySubBullet}>•</Text>
+                            <Text style={styles.hierarchySubText}>{line.replace("  - ", "")}</Text>
+                          </View>
                         );
                       }
-                      const prefix = line.slice(0, splitIndex + 1);
-                      const rest = line.slice(splitIndex + 1).trim();
+
+                      const isHeading = line.endsWith(":");
+                      const isFrameworkName =
+                        activeTab === "framework" &&
+                        !isSubPoint &&
+                        !isHeading &&
+                        !line.includes(":") &&
+                        line.trim().length > 0;
                       return (
-                        <View key={line} style={styles.structuredItem}>
-                          <View style={styles.structuredRow}>
-                            <Text style={styles.structuredBullet}>•</Text>
-                            <View style={styles.structuredContent}>
-                              <Text style={styles.structuredTitle}>{prefix}</Text>
-                              <Text style={styles.structuredBody}>{rest}</Text>
-                            </View>
-                          </View>
-                        </View>
+                        <Text
+                          key={line}
+                          style={
+                            isFrameworkName
+                              ? styles.hierarchyFrameworkNameText
+                              : activeTab === "plan" && isHeading
+                                ? styles.hierarchyPlanTitleText
+                              : isHeading
+                                ? styles.hierarchyHeadingText
+                                : styles.hierarchyBodyText
+                          }
+                        >
+                          {line}
+                        </Text>
                       );
                     })
                   ) : (
@@ -833,6 +839,20 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_700Bold",
     letterSpacing: 0.1,
   },
+  logoutButton: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#d2dcff",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "#ffffff",
+  },
+  logoutButtonText: {
+    color: "#4253a8",
+    fontSize: 13,
+    fontFamily: "Manrope_700Bold",
+  },
   loadingWrap: {
     flex: 1,
     paddingHorizontal: 20,
@@ -1070,6 +1090,62 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   structuredBody: {
+    fontSize: Platform.OS === "web" ? 14 : 15,
+    lineHeight: Platform.OS === "web" ? 22 : 24,
+    color: "#3f4b7c",
+    fontFamily: "Manrope_500Medium",
+  },
+  hierarchyHeadingText: {
+    fontSize: Platform.OS === "web" ? 15 : 16,
+    lineHeight: Platform.OS === "web" ? 23 : 24,
+    color: "#2f3f86",
+    fontFamily: "Manrope_700Bold",
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  hierarchyFrameworkNameText: {
+    fontSize: Platform.OS === "web" ? 18 : 19,
+    lineHeight: Platform.OS === "web" ? 26 : 28,
+    color: "#1f275b",
+    fontFamily: "Manrope_700Bold",
+    marginBottom: 10,
+    marginTop: 8,
+  },
+  hierarchyPlanTitleText: {
+    fontSize: Platform.OS === "web" ? 18 : 19,
+    lineHeight: Platform.OS === "web" ? 26 : 28,
+    color: "#1f275b",
+    fontFamily: "Manrope_700Bold",
+    marginBottom: 10,
+    marginTop: 8,
+  },
+  hierarchyBodyText: {
+    fontSize: Platform.OS === "web" ? 14 : 15,
+    lineHeight: Platform.OS === "web" ? 22 : 24,
+    color: "#3f4b7c",
+    fontFamily: "Manrope_500Medium",
+    marginBottom: 8,
+  },
+  hierarchyDivider: {
+    borderTopWidth: 1,
+    borderTopColor: "#c7d4ff",
+    marginVertical: 10,
+  },
+  hierarchySubRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginLeft: 14,
+    marginBottom: 8,
+  },
+  hierarchySubBullet: {
+    width: 14,
+    fontSize: Platform.OS === "web" ? 13 : 14,
+    lineHeight: Platform.OS === "web" ? 22 : 24,
+    color: "#2f3f86",
+    fontFamily: "Manrope_700Bold",
+  },
+  hierarchySubText: {
+    flex: 1,
     fontSize: Platform.OS === "web" ? 14 : 15,
     lineHeight: Platform.OS === "web" ? 22 : 24,
     color: "#3f4b7c",

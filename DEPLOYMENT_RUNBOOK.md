@@ -1,5 +1,12 @@
 # Book to Action Deployment Runbook
 
+## Local auth setup (Firebase)
+
+1. Create a Firebase project.
+2. Enable **Authentication > Email/Password**.
+3. Copy `.env.example` to `.env` and fill all `EXPO_PUBLIC_FIREBASE_*` values.
+4. Restart Expo after editing `.env`.
+
 ## Phase A: One-time setup
 
 1. Install tools
