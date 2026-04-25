@@ -3,13 +3,13 @@ import { useEffect, useState } from "react";
 import * as Speech from "expo-speech";
 import {
   Animated,
+  Image,
   Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import {
@@ -22,18 +22,10 @@ import {
   type ResultTabId,
 } from "./src/data/library";
 
-type Screen = "login" | "home" | "loading" | "results";
+type Screen = "home" | "loading" | "results";
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("login");
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("demo@booktoaction.app");
-  const [password, setPassword] = useState("Action@123");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [authError, setAuthError] = useState("");
-  const [authUsers, setAuthUsers] = useState<Record<string, string>>({
-    "demo@booktoaction.app": "Action@123",
-  });
+  const [screen, setScreen] = useState<Screen>("home");
   const [selectedGoals, setSelectedGoals] = useState<GoalId[]>(["productivity"]);
   const [selectedBookId, setSelectedBookId] = useState(BOOKS[0].id);
   const [activeTab, setActiveTab] = useState<ResultTabId>("framework");
@@ -117,48 +109,6 @@ export default function App() {
     setScreen("loading");
   };
 
-  const handleAuth = () => {
-    const normalizedEmail = email.trim().toLowerCase();
-    setAuthError("");
-
-    if (!normalizedEmail || !password) {
-      setAuthError("Email and password are required.");
-      return;
-    }
-    if (!normalizedEmail.includes("@")) {
-      setAuthError("Enter a valid email address.");
-      return;
-    }
-
-    if (authMode === "signup") {
-      if (password.length < 8) {
-        setAuthError("Password must be at least 8 characters.");
-        return;
-      }
-      if (password !== confirmPassword) {
-        setAuthError("Password and confirm password do not match.");
-        return;
-      }
-      if (authUsers[normalizedEmail]) {
-        setAuthError("Account already exists. Please sign in.");
-        return;
-      }
-      setAuthUsers((prev) => ({ ...prev, [normalizedEmail]: password }));
-      setScreen("home");
-      return;
-    }
-
-    if (authUsers[normalizedEmail] !== password) {
-      setAuthError("Invalid credentials. Try demo@booktoaction.app / Action@123");
-      return;
-    }
-    setScreen("home");
-  };
-
-  const handleLogout = () => {
-    setScreen("login");
-  };
-
   const speakSummary = (summaryKey: string, summary: string[], quotes: string[]) => {
     if (speakingGoalId === summaryKey) {
       Speech.stop();
@@ -200,99 +150,14 @@ export default function App() {
       <StatusBar style="dark" />
       <View style={styles.appContainer}>
 
-      {screen === "login" && (
-        <View style={styles.loginWrap}>
-          <View style={styles.loginHeroCard}>
-            <View style={styles.logo}>
-              <Text style={styles.logoText}>📖</Text>
-            </View>
-            <Text style={styles.title}>Book to Action</Text>
-            <Text style={styles.subtitle}>Turn books into action</Text>
-            <Text style={styles.loginNote}>
-              Convert powerful ideas into monthly strategy, frameworks, and execution plans.
-            </Text>
-            <View style={styles.loginPillRow}>
-              <Text style={styles.loginPill}>Summary</Text>
-              <Text style={styles.loginPill}>Frameworks</Text>
-              <Text style={styles.loginPill}>Action Plan</Text>
-            </View>
-
-            <View style={styles.authCard}>
-              <View style={styles.authModeRow}>
-                <Pressable
-                  style={[styles.authModeButton, authMode === "signin" && styles.authModeButtonActive]}
-                  onPress={() => {
-                    setAuthMode("signin");
-                    setAuthError("");
-                  }}
-                >
-                  <Text style={[styles.authModeText, authMode === "signin" && styles.authModeTextActive]}>
-                    Sign In
-                  </Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.authModeButton, authMode === "signup" && styles.authModeButtonActive]}
-                  onPress={() => {
-                    setAuthMode("signup");
-                    setAuthError("");
-                  }}
-                >
-                  <Text style={[styles.authModeText, authMode === "signup" && styles.authModeTextActive]}>
-                    Sign Up
-                  </Text>
-                </Pressable>
-              </View>
-
-              <TextInput
-                style={styles.authInput}
-                placeholder="Email"
-                placeholderTextColor="#94a3c8"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
-              <TextInput
-                style={styles.authInput}
-                placeholder="Password"
-                placeholderTextColor="#94a3c8"
-                secureTextEntry
-                autoCapitalize="none"
-                value={password}
-                onChangeText={setPassword}
-              />
-              {authMode === "signup" ? (
-                <TextInput
-                  style={styles.authInput}
-                  placeholder="Confirm password"
-                  placeholderTextColor="#94a3c8"
-                  secureTextEntry
-                  autoCapitalize="none"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                />
-              ) : null}
-
-              {authError ? <Text style={styles.authError}>{authError}</Text> : null}
-            </View>
-          </View>
-          <Pressable style={styles.startButton} onPress={handleAuth}>
-            <Text style={styles.startText}>{authMode === "signin" ? "Sign In" : "Create Account"}</Text>
-          </Pressable>
-        </View>
-      )}
-
       {screen === "home" && (
         <ScrollView contentContainerStyle={styles.homeContent} showsVerticalScrollIndicator={false}>
           <View style={styles.hero}>
             <View style={styles.logo}>
-              <Text style={styles.logoText}>📖</Text>
+              <Image source={require("./assets/icon.png")} style={styles.logoImage} resizeMode="cover" />
             </View>
             <Text style={styles.title}>Book to Action</Text>
             <Text style={styles.subtitle}>Turn books into action</Text>
-            <Pressable style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </Pressable>
           </View>
 
           <View style={styles.card}>
@@ -354,6 +219,9 @@ export default function App() {
 
       {screen === "loading" && (
         <View style={styles.loadingWrap}>
+          <View style={styles.loadingBrand}>
+            <Image source={require("./assets/icon.png")} style={styles.loadingBrandImage} resizeMode="cover" />
+          </View>
           <Animated.View
             style={[
               styles.loaderOuter,
@@ -382,11 +250,13 @@ export default function App() {
       {screen === "results" && (
         <ScrollView contentContainerStyle={styles.resultsContent} showsVerticalScrollIndicator={false}>
           <View style={styles.topBar}>
-            <Pressable onPress={() => setScreen("home")}>
-              <Text style={styles.topLink}>← Back</Text>
-            </Pressable>
+            <View style={styles.topBarLeft}>
+              <Pressable onPress={() => setScreen("home")}>
+                <Text style={styles.topLink}>← Back</Text>
+              </Pressable>
+            </View>
             <Pressable style={styles.homeBtn} onPress={() => setScreen("home")}>
-              <Text style={styles.homeBtnText}>⌂</Text>
+              <Image source={require("./assets/icon.png")} style={styles.homeBtnIconImage} resizeMode="cover" />
             </Pressable>
           </View>
 
@@ -675,19 +545,21 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
-  logoText: {
-    fontSize: 30,
+  logoImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 18,
   },
   title: {
-    fontSize: Platform.OS === "web" ? 24 : 32,
-    lineHeight: Platform.OS === "web" ? 28 : 36,
+    fontSize: Platform.OS === "web" ? 24 : 22,
+    lineHeight: Platform.OS === "web" ? 28 : 26,
     fontFamily: "Manrope_700Bold",
     letterSpacing: -0.4,
     color: "#1b214b",
   },
   subtitle: {
     marginTop: 2,
-    fontSize: Platform.OS === "web" ? 13 : 15,
+    fontSize: Platform.OS === "web" ? 13 : 13,
     fontFamily: "Manrope_500Medium",
     color: "#6d76a6",
   },
@@ -713,7 +585,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   cardTitle: {
-    fontSize: Platform.OS === "web" ? 16 : 22,
+    fontSize: Platform.OS === "web" ? 16 : 16,
     fontFamily: "Manrope_700Bold",
     letterSpacing: -0.2,
     color: "#1f275b",
@@ -744,7 +616,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   goalText: {
-    fontSize: Platform.OS === "web" ? 14 : 18,
+    fontSize: Platform.OS === "web" ? 14 : 14,
     fontFamily: "Manrope_600SemiBold",
     color: "#2d355f",
     marginLeft: 8,
@@ -810,7 +682,7 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_400Regular",
   },
   selectText: {
-    fontSize: Platform.OS === "web" ? 14 : 16,
+    fontSize: Platform.OS === "web" ? 14 : 14,
     fontFamily: "Manrope_600SemiBold",
     color: "#1f275b",
   },
@@ -835,7 +707,7 @@ const styles = StyleSheet.create({
   },
   startText: {
     color: "#ffffff",
-    fontSize: Platform.OS === "web" ? 16 : 18,
+    fontSize: Platform.OS === "web" ? 16 : 16,
     fontFamily: "Manrope_700Bold",
     letterSpacing: 0.1,
   },
@@ -857,6 +729,23 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 110,
+  },
+  loadingBrand: {
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    overflow: "hidden",
+    alignSelf: "center",
+    marginBottom: 14,
+    shadowColor: "#1d2559",
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  loadingBrandImage: {
+    width: "100%",
+    height: "100%",
   },
   loaderOuter: {
     width: 78,
@@ -899,30 +788,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 14,
   },
+  topBarLeft: {
+    minWidth: 84,
+  },
   topLink: {
     color: "#3a477e",
-    fontSize: Platform.OS === "web" ? 18 : 19,
+    fontSize: Platform.OS === "web" ? 18 : 17,
     fontFamily: "Manrope_600SemiBold",
   },
   homeBtn: {
-    borderWidth: 1,
-    borderColor: "#4d67e8",
     borderRadius: 12,
-    width: 46,
-    height: 38,
+    width: 42,
+    height: 42,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#4f68ea",
-    shadowColor: "#4f68ea",
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 5,
+    shadowColor: "#1d2559",
+    shadowOpacity: 0.24,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  homeBtnText: {
-    fontSize: 20,
-    color: "#ffffff",
-    fontFamily: "Manrope_700Bold",
+  homeBtnIconImage: {
+    width: "100%",
+    height: "100%",
   },
   resultHeader: {
     backgroundColor: "#f4f6ff",
@@ -941,28 +830,30 @@ const styles = StyleSheet.create({
   },
   resultBook: {
     color: "#1f275b",
-    fontSize: Platform.OS === "web" ? 24 : 32,
+    fontSize: Platform.OS === "web" ? 24 : 18,
+    lineHeight: Platform.OS === "web" ? 32 : 24,
     fontFamily: "Manrope_700Bold",
     letterSpacing: -0.35,
     marginBottom: 2,
   },
   resultAuthor: {
     color: "#5d6898",
-    fontSize: Platform.OS === "web" ? 13 : 15,
-    marginBottom: 16,
+    fontSize: Platform.OS === "web" ? 13 : 13,
     fontFamily: "Manrope_500Medium",
+    marginBottom: 12,
   },
   resultGoal: {
-    color: "#3558d7",
-    fontSize: Platform.OS === "web" ? 13 : 15,
-    fontFamily: "Manrope_700Bold",
+    color: "#475489",
+    fontSize: Platform.OS === "web" ? 13 : 14,
+    fontFamily: "Manrope_500Medium",
     marginBottom: 10,
   },
   tabsWrap: {
     marginBottom: 16,
   },
   tabsContent: {
-    paddingRight: 12,
+    paddingRight: Platform.OS === "web" ? 12 : 18,
+    paddingLeft: Platform.OS === "web" ? 0 : 2,
     paddingBottom: 2,
   },
   tab: {
@@ -970,9 +861,9 @@ const styles = StyleSheet.create({
     borderColor: "#ccd7ff",
     borderRadius: 999,
     backgroundColor: "#eef2ff",
-    paddingHorizontal: Platform.OS === "web" ? 9 : 10,
-    paddingVertical: Platform.OS === "web" ? 6 : 7,
-    marginRight: 6,
+    paddingHorizontal: Platform.OS === "web" ? 9 : 8,
+    paddingVertical: Platform.OS === "web" ? 6 : 5,
+    marginRight: Platform.OS === "web" ? 6 : 4,
   },
   tabActive: {
     borderColor: "#4f68ea",
@@ -985,7 +876,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: "#5c6ea8",
-    fontSize: Platform.OS === "web" ? 12 : 13,
+    fontSize: Platform.OS === "web" ? 12 : 11,
     fontFamily: "Manrope_600SemiBold",
   },
   tabTextActive: {
@@ -993,8 +884,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     flex: 1,
-    fontSize: Platform.OS === "web" ? 18 : 22,
-    lineHeight: Platform.OS === "web" ? 25 : 30,
+    fontSize: Platform.OS === "web" ? 18 : 17,
+    lineHeight: Platform.OS === "web" ? 25 : 23,
     fontFamily: "Manrope_700Bold",
     letterSpacing: -0.2,
     color: "#1f275b",
@@ -1006,15 +897,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sectionText: {
-    fontSize: Platform.OS === "web" ? 14 : 15,
-    lineHeight: Platform.OS === "web" ? 22 : 24,
+    fontSize: Platform.OS === "web" ? 14 : 14,
+    lineHeight: Platform.OS === "web" ? 22 : 22,
     color: "#3f4b7c",
     marginBottom: 10,
     fontFamily: "Manrope_500Medium",
   },
   bulletText: {
-    fontSize: Platform.OS === "web" ? 14 : 15,
-    lineHeight: Platform.OS === "web" ? 22 : 24,
+    fontSize: Platform.OS === "web" ? 14 : 14,
+    lineHeight: Platform.OS === "web" ? 22 : 22,
     color: "#3f4b7c",
     marginBottom: 10,
     fontFamily: "Manrope_500Medium",
@@ -1075,8 +966,8 @@ const styles = StyleSheet.create({
   },
   structuredBullet: {
     width: 16,
-    fontSize: Platform.OS === "web" ? 14 : 15,
-    lineHeight: Platform.OS === "web" ? 22 : 24,
+    fontSize: Platform.OS === "web" ? 14 : 14,
+    lineHeight: Platform.OS === "web" ? 22 : 22,
     color: "#2f3f86",
     fontFamily: "Manrope_700Bold",
   },
@@ -1084,44 +975,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   structuredTitle: {
-    fontSize: Platform.OS === "web" ? 14 : 15,
+    fontSize: Platform.OS === "web" ? 14 : 14,
     color: "#2f3f86",
     fontFamily: "Manrope_700Bold",
     marginBottom: 4,
   },
   structuredBody: {
-    fontSize: Platform.OS === "web" ? 14 : 15,
-    lineHeight: Platform.OS === "web" ? 22 : 24,
+    fontSize: Platform.OS === "web" ? 14 : 14,
+    lineHeight: Platform.OS === "web" ? 22 : 22,
     color: "#3f4b7c",
     fontFamily: "Manrope_500Medium",
   },
   hierarchyHeadingText: {
-    fontSize: Platform.OS === "web" ? 15 : 16,
-    lineHeight: Platform.OS === "web" ? 23 : 24,
+    fontSize: Platform.OS === "web" ? 15 : 15,
+    lineHeight: Platform.OS === "web" ? 23 : 21,
     color: "#2f3f86",
     fontFamily: "Manrope_700Bold",
     marginBottom: 8,
     marginTop: 4,
   },
   hierarchyFrameworkNameText: {
-    fontSize: Platform.OS === "web" ? 18 : 19,
-    lineHeight: Platform.OS === "web" ? 26 : 28,
+    fontSize: Platform.OS === "web" ? 18 : 17,
+    lineHeight: Platform.OS === "web" ? 26 : 23,
     color: "#1f275b",
     fontFamily: "Manrope_700Bold",
     marginBottom: 10,
     marginTop: 8,
   },
   hierarchyPlanTitleText: {
-    fontSize: Platform.OS === "web" ? 18 : 19,
-    lineHeight: Platform.OS === "web" ? 26 : 28,
+    fontSize: Platform.OS === "web" ? 18 : 17,
+    lineHeight: Platform.OS === "web" ? 26 : 23,
     color: "#1f275b",
     fontFamily: "Manrope_700Bold",
     marginBottom: 10,
     marginTop: 8,
   },
   hierarchyBodyText: {
-    fontSize: Platform.OS === "web" ? 14 : 15,
-    lineHeight: Platform.OS === "web" ? 22 : 24,
+    fontSize: Platform.OS === "web" ? 14 : 14,
+    lineHeight: Platform.OS === "web" ? 22 : 22,
     color: "#3f4b7c",
     fontFamily: "Manrope_500Medium",
     marginBottom: 8,
@@ -1139,8 +1030,8 @@ const styles = StyleSheet.create({
   },
   hierarchySubBullet: {
     width: 14,
-    fontSize: Platform.OS === "web" ? 13 : 14,
-    lineHeight: Platform.OS === "web" ? 22 : 24,
+    fontSize: Platform.OS === "web" ? 13 : 13,
+    lineHeight: Platform.OS === "web" ? 22 : 22,
     color: "#2f3f86",
     fontFamily: "Manrope_700Bold",
   },

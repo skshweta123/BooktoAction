@@ -1,0 +1,164 @@
+Scaling Plan: 10,000 Books in 12 Months
+
+1) Objective
+
+Build a scalable, quality-controlled content system supporting:
+- 10,000 books/year
+- multi-goal output generation
+- mobile + web delivery
+- quality and moderation workflows
+
+2) Throughput Math
+
+- 10,000 books/year
+- ~833 books/month
+- ~192 books/week
+- ~27-28 books/day average
+
+This volume is not feasible with manual-only content curation in static code.
+
+3) Required Capability Stack
+
+3.1 Ingestion
+- Import source metadata and references
+- Normalize identifiers and tags
+- detect duplicates
+
+3.2 Profile Extraction
+- Build canonical BookProfile:
+  - thesis
+  - framework signatures
+  - concepts/anchors
+  - actionable principle sets
+
+3.3 Generation
+- Generate tab payload candidates per goal and goal-combinations
+- enforce strict schema output
+
+3.4 Validation
+- Anchor coverage threshold
+- Similarity checks across tabs and goals
+- Structure completeness checks
+- Length/depth minimums
+
+3.5 Moderation
+- Auto-approve high confidence
+- Human review queue for failed/low-confidence
+- versioned publish states
+
+4) System Architecture for Scale
+
+4.1 Services
+- Content API
+- Generation Worker
+- Validation Worker
+- Moderation API/Admin
+- Analytics/Telemetry Processor
+
+4.2 Storage
+- Postgres:
+  - books
+  - book_profiles
+  - goal_results
+  - quality_scores
+  - moderation_events
+- Object store:
+  - raw content and processing artifacts
+- Redis:
+  - caching latest approved payloads
+
+5) Data Model Additions
+
+Suggested key tables:
+- `books`
+- `book_versions`
+- `book_profiles`
+- `result_payloads`
+- `quality_reports`
+- `moderation_reviews`
+- `publish_history`
+
+6) Quality Scoring at Scale
+
+Score dimensions:
+- Coverage
+- Specificity
+- Uniqueness
+- Actionability
+- Consistency
+- Structural completeness
+
+Use weighted 0-100 score with thresholds:
+- >=85 publish-ready
+- 70-84 needs edit
+- <70 hold
+
+7) Operational Model
+
+Tiered workflow
+1. Automated generation and validation
+2. Human spot-review for medium confidence
+3. Full review for low confidence
+
+Governance
+- Weekly quality audit by category
+- Drift monitoring (repetition, genericity)
+- Regeneration queue for stale assets
+
+8) Team and Ownership (Lean)
+
+Minimum practical team:
+- 1 product/ops owner
+- 1 backend engineer
+- 1 app engineer
+- 1 content quality lead
+- 1-2 reviewers/editors (part-time initially)
+
+9) Infra and Cost Strategy
+
+Keep costs controlled by:
+- Precompute and cache content outputs
+- Limit on-demand generation
+- Batch jobs overnight
+- selective human review (risk-based)
+
+10) Timeline (Suggested)
+
+Q1
+- Backend data model and API skeleton
+- ingestion MVP
+- quality score v1
+
+Q2
+- generation + validation workers
+- admin moderation MVP
+- migrate from static TS content to backend reads
+
+Q3
+- scale batch processing
+- optimize cache and retrieval latency
+- deploy analytics and drift monitors
+
+Q4
+- stabilize at 10K/year throughput
+- finalize governance and QA SLOs
+
+11) Risks and Mitigations
+
+- Risk: Generic repetitive output at scale
+  - Mitigation: stronger validation thresholds + editorial sampling
+- Risk: High moderation overhead
+  - Mitigation: confidence-based routing
+- Risk: Latency spikes
+  - Mitigation: precompute and cache approved payloads
+- Risk: Compliance drift
+  - Mitigation: publish policy checks in CI
+
+12) Migration Path from Current Repo
+
+1. Keep current app functional
+2. Introduce API adapter layer without switching behavior
+3. Move one book category to backend
+4. Validate quality parity
+5. Migrate all catalogs
+6. Remove static content dependency from app bundle

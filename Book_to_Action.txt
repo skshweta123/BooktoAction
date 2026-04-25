@@ -30,7 +30,7 @@ Show author name: <Name of the author of the selected book> e.g. James Clear
 
 Screen 3: Result Screen (with following sections. You decide the best display format - scrollable, tab, step-wise, or any other way))
 Sections:
--3-minute summary
+-Summary
 -Key ideas
 -Framework
 -Action plan

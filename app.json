@@ -12,7 +12,7 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/REPLACE_WITH_PROJECT_ID"
+      "url": "https://u.expo.dev/2557bf7e-1638-4929-a54f-96a52758da94"
     },
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -22,7 +22,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.booktoaction.app",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.booktoaction.app",
@@ -38,10 +41,14 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
+    "plugins": [
+      "expo-font"
+    ],
     "extra": {
       "eas": {
-        "projectId": "REPLACE_WITH_PROJECT_ID"
+        "projectId": "2557bf7e-1638-4929-a54f-96a52758da94"
       }
-    }
+    },
+    "owner": "skshwdev123"
   }
 }
