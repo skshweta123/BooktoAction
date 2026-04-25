@@ -139,3 +139,63 @@ Before implementation, I need just 2 decisions from you:
 
 Login options for MVP: Email only or Email + Google?
 For initial 10 books, do you want me to use manual curated JSON seed files first (fastest), then connect Firebase next?
+
+Deployment Prep
+Next Step Order (recommended)
+Stabilize auth/data backend
+Prepare production config/secrets
+Build + test release artifacts
+Deploy web
+Submit Android + iOS
+1) Backend before deployment (must-do)
+Right now login is local state. For production, switch to real backend auth (Firebase Auth recommended).
+
+Add Firebase project
+Enable Email/Password auth
+Move user/session/content reads to backend
+Keep book content in Firestore (or API) rather than hardcoded only
+Without this, published users won’t have persistent real accounts.
+
+2) Production configuration checklist
+In book-to-action-app:
+
+App identity:
+app name
+bundle/package IDs
+icons/splash
+Environment vars for Firebase/API endpoints
+Privacy policy URL + support email
+Terms/consent text if needed for account + audio
+Analytics/crash reporting (optional but strongly advised)
+3) Build system setup (Expo EAS)
+From project root:
+
+npm i -g eas-cli
+eas login
+eas build:configure
+Then create production profiles in eas.json (I can add this for you).
+
+4) Deploy Web
+Two options:
+
+Fastest: npx expo export --platform web and host static output on Vercel/Netlify/Firebase Hosting
+Add custom domain, HTTPS, metadata
+5) Deploy Android + iOS
+Android (Play Store)
+Build AAB: eas build -p android --profile production
+Create Google Play listing
+Upload AAB
+Fill content rating, privacy policy, screenshots
+Roll out internal test -> closed test -> production
+iOS (App Store)
+Build IPA: eas build -p ios --profile production
+Create App Store Connect app
+Upload build via EAS submit/TestFlight
+Add screenshots, privacy details, review notes
+TestFlight -> production
+Immediate next actions for you
+Confirm if you want me to do this now:
+integrate Firebase Auth into current login screen,
+add production eas.json + env setup,
+set web export/deploy scripts in package.json.
+If you say “Proceed with deployment prep”, I’ll implement these in the codebase step-by-step.
