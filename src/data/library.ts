@@ -16,8 +16,16 @@ export type Book = {
   id: string;
   title: string;
   author: string;
+  // Local filename for bundled fallback PDFs.
+  pdfFileName: string;
+  // Optional remote URL override for this specific book.
+  pdfUrl?: string;
+  // Effective PDF source used by app flows (remote when configured, else local asset path).
   pdfAssetPath: string;
 };
+
+const PDF_BASE_URL = process.env.EXPO_PUBLIC_BOOKS_PDF_BASE_URL?.trim().replace(/\/$/, "") ?? "";
+const resolvePdfPath = (fileName: string) => `${PDF_BASE_URL}/${encodeURIComponent(fileName)}`;
 
 export type GoalResult = {
   summary: string[];
@@ -40,63 +48,87 @@ export const BOOKS: Book[] = [
     id: "atomic-habits",
     title: "Atomic Habits",
     author: "James Clear",
-    pdfAssetPath: "assets/books/Atomic_habits.pdf",
+    pdfFileName: "Atomic_Habits.pdf",
+    pdfAssetPath: resolvePdfPath("Atomic_Habits.pdf"),
   },
   {
     id: "as-a-man-thinketh",
     title: "As a Man Thinketh",
     author: "James Allen",
-    pdfAssetPath: "assets/books/As_a_man_thinketh.pdf",
+    pdfFileName: "As_a_man_thinketh.pdf",
+    pdfAssetPath: resolvePdfPath("As_a_man_thinketh.pdf"),
   },
   {
     id: "encyclopaedia-britannica",
     title: "Encyclopaedia Britannica",
     author: "Various",
-    pdfAssetPath: "assets/books/Encyclopaedia_Britannica.pdf",
+    pdfFileName: "Encyclopaedia_Britannica.pdf",
+    pdfAssetPath: resolvePdfPath("Encyclopaedia_Britannica.pdf"),
   },
   {
     id: "enquire-within-upon-everything",
     title: "Enquire Within Upon Everything",
     author: "Robert Kemp Philp",
-    pdfAssetPath: "assets/books/Enquire within upon everything.pdf",
+    pdfFileName: "Enquire_Within_Upon_Everything.pdf",
+    pdfAssetPath: resolvePdfPath("Enquire_Within_Upon_Everything.pdf"),
   },
   {
     id: "the-art-of-money-getting",
     title: "The Art of Money Getting",
     author: "P. T. Barnum",
-    pdfAssetPath: "assets/books/The_art_of_money_getting.pdf",
+    pdfFileName: "The_Art_of_Money_Getting.pdf",
+    pdfAssetPath: resolvePdfPath("The_Art_of_Money_Getting.pdf"),
   },
   {
     id: "the-art-of-war",
     title: "The Art of War",
     author: "Sun Tzu",
-    pdfAssetPath: "assets/books/The_Art_of_War.pdf",
+    pdfFileName: "The_Art_of_War.pdf",
+    pdfAssetPath: resolvePdfPath("The_Art_of_War.pdf"),
   },
   {
     id: "the-book-of-business-etiquette",
     title: "The Book of Business Etiquette",
     author: "Nella Henney",
-    pdfAssetPath: "assets/books/The_Book_of_Business_Etiquette.pdf",
+    pdfFileName: "The_Book_of_Business_Etiquette.pdf",
+    pdfAssetPath: resolvePdfPath("The_Book_of_Business_Etiquette.pdf"),
   },
   {
     id: "the-elements-of-style",
     title: "The Elements of Style",
     author: "William Strunk Jr. and E. B. White",
-    pdfAssetPath: "assets/books/The_Elements_of_Style.pdf",
+    pdfFileName: "The_Elements_of_Style.pdf",
+    pdfAssetPath: resolvePdfPath("The_Elements_of_Style.pdf"),
   },
   {
     id: "the-psychology-of-management",
     title: "The Psychology of Management",
     author: "L. M. Gilbreth",
-    pdfAssetPath: "assets/books/The_Psychology_of_Management.pdf",
+    pdfFileName: "The_Psychology_of_Management.pdf",
+    pdfAssetPath: resolvePdfPath("The_Psychology_of_Management.pdf"),
   },
   {
     id: "the-science-of-getting-rich",
     title: "The Science of Getting Rich",
     author: "Wallace D. Wattles",
-    pdfAssetPath: "assets/books/The_Science_of_Getting_Rich.pdf",
+    pdfFileName: "The_Science_of_Getting_Rich.pdf",
+    pdfAssetPath: resolvePdfPath("The_Science_of_Getting_Rich.pdf"),
   },
 ];
+
+export const getLocalPdfAssetPath = (book: Book) => `assets/books/${book.pdfFileName}`;
+
+export const getRemotePdfUrl = (book: Book) => {
+  if (book.pdfUrl) return book.pdfUrl;
+  if (!PDF_BASE_URL) return null;
+  return `${PDF_BASE_URL}/${encodeURIComponent(book.pdfFileName)}`;
+};
+
+export const getPreferredPdfSource = (book: Book) => ({
+  remoteUrl: getRemotePdfUrl(book),
+  localAssetPath: getLocalPdfAssetPath(book),
+});
+
 
 export const TAB_META: Array<{ id: ResultTabId; label: string; title: string }> = [
   { id: "framework", label: "Framework", title: "Framework" },

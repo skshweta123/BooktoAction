@@ -1,9 +1,10 @@
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Speech from "expo-speech";
 import {
   Animated,
   Image,
+  type ImageSourcePropType,
   Platform,
   Pressable,
   SafeAreaView,
@@ -20,7 +21,7 @@ import {
   type GoalId,
   type GoalResult,
   type ResultTabId,
-} from "./src/data/library";
+} from "./src/features/book-to-action/data";
 
 type Screen = "home" | "loading" | "results";
 
@@ -29,10 +30,13 @@ export default function App() {
   const [selectedGoals, setSelectedGoals] = useState<GoalId[]>(["productivity"]);
   const [selectedBookId, setSelectedBookId] = useState(BOOKS[0].id);
   const [activeTab, setActiveTab] = useState<ResultTabId>("framework");
-  const [bookMenuOpen, setBookMenuOpen] = useState(false);
   const [selectionError, setSelectionError] = useState("");
   const [speakingGoalId, setSpeakingGoalId] = useState<string | null>(null);
+  const [bookScrollX, setBookScrollX] = useState(0);
+  const [bookViewportWidth, setBookViewportWidth] = useState(0);
+  const [bookContentWidth, setBookContentWidth] = useState(0);
   const rotateAnim = useState(new Animated.Value(0))[0];
+  const bookScrollRef = useRef<ScrollView | null>(null);
 
   const selectedBook = BOOKS.find((book) => book.id === selectedBookId) ?? BOOKS[0];
   const selectedGoalLabels = selectedGoals
@@ -145,6 +149,40 @@ export default function App() {
     return "#c0466d";
   };
 
+  const getBookPlaceholder = (title: string) => {
+    const initials = title
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase() ?? "")
+      .join("");
+    return initials || "BK";
+  };
+
+  const getBookCoverSource = (bookId: string): ImageSourcePropType | null => {
+    if (bookId === "atomic-habits") return require("./assets/covers/Atomic_Habits.jpg");
+    if (bookId === "as-a-man-thinketh") return require("./assets/covers/As_a_Man_Thinketh.jpeg");
+    if (bookId === "encyclopaedia-britannica") return require("./assets/covers/Encyclopaedia_Britannica.jpg");
+    if (bookId === "enquire-within-upon-everything") return require("./assets/covers/Enquire_Within_Upon_Everything.jpg");
+    if (bookId === "the-art-of-money-getting") return require("./assets/covers/The_Art_of_Money_Getting.jpg");
+    if (bookId === "the-art-of-war") return require("./assets/covers/The_Art_of_War.jpg");
+    if (bookId === "the-book-of-business-etiquette") return require("./assets/covers/The_Book_of_Business_Etiquette.jpg");
+    if (bookId === "the-elements-of-style") return require("./assets/covers/The_Elements_of_Style.jpg");
+    if (bookId === "the-psychology-of-management") return require("./assets/covers/The_Psychology_of_Management.jpg");
+    if (bookId === "the-science-of-getting-rich") return require("./assets/covers/The_Science_of_Getting_Rich.jpg");
+    return null;
+  };
+
+  const canScrollLeft = bookScrollX > 8;
+  const canScrollRight = bookScrollX + bookViewportWidth < bookContentWidth - 8;
+
+  const scrollBooks = (direction: "left" | "right") => {
+    const step = Math.max(160, bookViewportWidth * 0.75);
+    const maxX = Math.max(0, bookContentWidth - bookViewportWidth);
+    const nextX = direction === "left" ? Math.max(0, bookScrollX - step) : Math.min(maxX, bookScrollX + step);
+    bookScrollRef.current?.scrollTo({ x: nextX, animated: true });
+  };
+
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="dark" />
@@ -161,58 +199,94 @@ export default function App() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>What do you want to improve?</Text>
-            {GOALS.map((goal) => {
-              const isSelected = selectedGoals.includes(goal.id);
-              return (
-              <Pressable
-                key={goal.id}
-                style={[styles.goalRow, isSelected && styles.goalRowActive]}
-                onPress={() => toggleGoal(goal.id)}
-              >
-                <View style={styles.goalLeft}>
-                  <Text style={styles.goalIcon}>{goal.icon}</Text>
-                  <Text style={[styles.goalText, isSelected && styles.goalTextActive]}>{goal.label}</Text>
-                </View>
-                <Text style={styles.goalArrow}>{isSelected ? "✓" : "○"}</Text>
-              </Pressable>
-              );
-            })}
-            <Text style={styles.helperText}>Selected: {selectedGoals.length}/3 goals</Text>
+            <Text style={styles.cardTitle}>Categories</Text>
+            <Text style={styles.sectionCaption}>Select multiple categories</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryScroll}
+              contentContainerStyle={styles.categoryScrollContent}
+            >
+              {GOALS.map((goal) => {
+                const isSelected = selectedGoals.includes(goal.id);
+                return (
+                  <Pressable
+                    key={goal.id}
+                    style={[styles.categoryChip, isSelected && styles.categoryChipActive]}
+                    onPress={() => toggleGoal(goal.id)}
+                  >
+                    <Text style={styles.categoryChipIcon}>{goal.icon}</Text>
+                    <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextActive]}>
+                      {goal.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
             {selectionError ? <Text style={styles.errorText}>{selectionError}</Text> : null}
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Select book</Text>
-            <Pressable style={styles.select} onPress={() => setBookMenuOpen((prev) => !prev)}>
-              <Text style={styles.selectText}>{selectedBook.title}</Text>
-              <Text style={styles.selectArrow}>{bookMenuOpen ? "⌃" : "⌄"}</Text>
-            </Pressable>
-            {bookMenuOpen && (
-              <View style={styles.bookMenu}>
-                <ScrollView nestedScrollEnabled style={styles.bookMenuList}>
-                  {BOOKS.map((book) => (
+            <Text style={styles.cardTitle}>Pick a book</Text>
+            <Text style={styles.sectionCaption}>Tap a card or use arrows to browse</Text>
+            <View
+              style={styles.booksCarouselRow}
+              onLayout={(event) => setBookViewportWidth(Math.max(0, event.nativeEvent.layout.width))}
+            >
+              <Pressable
+                style={[styles.arrowSide, !canScrollLeft && styles.arrowButtonDisabled]}
+                onPress={() => scrollBooks("left")}
+                disabled={!canScrollLeft}
+              >
+                <Text style={styles.arrowButtonText}>‹</Text>
+              </Pressable>
+              <ScrollView
+                ref={bookScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled
+                style={styles.booksScroll}
+                contentContainerStyle={styles.booksScrollContent}
+                onContentSizeChange={(width) => setBookContentWidth(width)}
+                onScroll={(event) => setBookScrollX(event.nativeEvent.contentOffset.x)}
+                scrollEventThrottle={16}
+              >
+                {BOOKS.map((book) => {
+                  const isSelected = selectedBookId === book.id;
+                  const bookCoverSource = getBookCoverSource(book.id);
+                  return (
                     <Pressable
                       key={book.id}
-                      style={styles.bookItem}
-                      onPress={() => {
-                        setSelectedBookId(book.id);
-                        setBookMenuOpen(false);
-                      }}
+                      style={[styles.bookCard, isSelected && styles.bookCardActive]}
+                      onPress={() => setSelectedBookId(book.id)}
                     >
-                      <Text style={styles.bookItemTitle}>
-                        {book.title}
-                        <Text style={styles.bookItemAuthorInline}> - {book.author}</Text>
-                      </Text>
+                      {bookCoverSource ? (
+                        <Image source={bookCoverSource} style={styles.bookCoverImage} resizeMode="cover" />
+                      ) : (
+                        <View style={styles.bookCoverPlaceholder}>
+                          <Text style={styles.bookCoverPlaceholderText}>{getBookPlaceholder(book.title)}</Text>
+                        </View>
+                      )}
                     </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+                  );
+                })}
+              </ScrollView>
+              <Pressable
+                style={[styles.arrowSide, !canScrollRight && styles.arrowButtonDisabled]}
+                onPress={() => scrollBooks("right")}
+                disabled={!canScrollRight}
+              >
+                <Text style={styles.arrowButtonText}>›</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.selectedBookMeta}>
+              Selected: {selectedBook.title} by {selectedBook.author}
+            </Text>
           </View>
 
           <Pressable style={styles.startButton} onPress={handleStart}>
-            <Text style={styles.startText}>Start</Text>
+            <Text style={styles.startText}>Create Action Plan</Text>
+            <Text style={styles.startArrow}>→</Text>
           </Pressable>
         </ScrollView>
       )}
@@ -330,30 +404,39 @@ export default function App() {
 
                   {activeTab === "summary" && result ? (
                     <>
-                      {lines.map((line) => (
-                        <Text key={line} style={styles.sectionText}>
-                          {line}
-                        </Text>
-                      ))}
+                      {lines.map((line, index) => {
+                        if (line.trim() === "---") {
+                          return <View key={`summary-divider-${index}`} style={styles.hierarchyDivider} />;
+                        }
+                        const isHeading = line.endsWith(":");
+                        return (
+                          <Text
+                            key={`summary-${index}-${line}`}
+                            style={isHeading ? styles.hierarchyHeadingText : styles.sectionText}
+                          >
+                            {line}
+                          </Text>
+                        );
+                      })}
                       <View style={styles.quoteBlock}>
                         <Text style={styles.quoteHeading}>Notable lines</Text>
-                        {result.quotes.map((quote) => (
-                          <Text key={quote} style={styles.quoteText}>
+                        {result.quotes.map((quote, index) => (
+                          <Text key={`quote-${index}-${quote}`} style={styles.quoteText}>
                             "{quote.replace(/^"|"$/g, "")}"
                           </Text>
                         ))}
                       </View>
                     </>
                   ) : activeTab === "framework" || activeTab === "plan" ? (
-                    lines.map((line) => {
+                    lines.map((line, index) => {
                       if (line.trim() === "---") {
-                        return <View key={line} style={styles.hierarchyDivider} />;
+                        return <View key={`divider-${activeTab}-${index}`} style={styles.hierarchyDivider} />;
                       }
 
                       const isSubPoint = line.startsWith("  - ");
                       if (isSubPoint) {
                         return (
-                          <View key={line} style={styles.hierarchySubRow}>
+                          <View key={`sub-${activeTab}-${index}-${line}`} style={styles.hierarchySubRow}>
                             <Text style={styles.hierarchySubBullet}>•</Text>
                             <Text style={styles.hierarchySubText}>{line.replace("  - ", "")}</Text>
                           </View>
@@ -369,7 +452,7 @@ export default function App() {
                         line.trim().length > 0;
                       return (
                         <Text
-                          key={line}
+                          key={`hierarchy-${activeTab}-${index}-${line}`}
                           style={
                             isFrameworkName
                               ? styles.hierarchyFrameworkNameText
@@ -384,13 +467,35 @@ export default function App() {
                         </Text>
                       );
                     })
-                  ) : (
-                    lines.map((line) => (
-                      <Text key={line} style={styles.bulletText}>
-                        • {line}
-                      </Text>
-                    ))
-                  )}
+                  ) : activeTab === "ideas" || activeTab === "mistakes" ? (
+                    lines.map((line, index) => {
+                      if (line.trim() === "---") {
+                        return <View key={`divider-${activeTab}-${index}`} style={styles.hierarchyDivider} />;
+                      }
+                      const isSubPoint = line.startsWith("  - ");
+                      if (isSubPoint) {
+                        return (
+                          <View key={`sub-${activeTab}-${index}-${line}`} style={styles.hierarchySubRow}>
+                            <Text style={styles.hierarchySubBullet}>•</Text>
+                            <Text style={styles.hierarchySubText}>{line.replace("  - ", "")}</Text>
+                          </View>
+                        );
+                      }
+                      const isHeading = line.endsWith(":");
+                      if (isHeading) {
+                        return (
+                          <Text key={`heading-${activeTab}-${index}-${line}`} style={styles.hierarchyHeadingText}>
+                            {line}
+                          </Text>
+                        );
+                      }
+                      return (
+                        <Text key={`bullet-${activeTab}-${index}-${line}`} style={styles.bulletText}>
+                          • {line}
+                        </Text>
+                      );
+                    })
+                  ) : null}
                 </View>
               );
             })()}
@@ -405,7 +510,7 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#eef2ff",
+    backgroundColor: "#f3f4f6",
     alignItems: "center",
   },
   appContainer: {
@@ -523,13 +628,13 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: Platform.OS === "web" ? 640 : 520,
     alignSelf: "center",
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 20,
   },
   hero: {
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   logo: {
     width: 60,
@@ -555,13 +660,13 @@ const styles = StyleSheet.create({
     lineHeight: Platform.OS === "web" ? 28 : 26,
     fontFamily: "Manrope_700Bold",
     letterSpacing: -0.4,
-    color: "#1b214b",
+    color: "#111827",
   },
   subtitle: {
     marginTop: 2,
-    fontSize: Platform.OS === "web" ? 13 : 13,
-    fontFamily: "Manrope_500Medium",
-    color: "#6d76a6",
+    fontSize: Platform.OS === "web" ? 14 : 14,
+    fontFamily: "Manrope_600SemiBold",
+    color: "#4b5563",
   },
   loginNote: {
     marginTop: 16,
@@ -572,24 +677,132 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   card: {
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#dde3ff",
+    borderColor: "#e5e7eb",
     backgroundColor: "#ffffff",
-    padding: Platform.OS === "web" ? 16 : 14,
-    marginBottom: 14,
-    shadowColor: "#4450a3",
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    padding: Platform.OS === "web" ? 14 : 13,
+    marginBottom: 12,
+    shadowColor: "#111827",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   cardTitle: {
-    fontSize: Platform.OS === "web" ? 16 : 16,
+    fontSize: Platform.OS === "web" ? 20 : 19,
+    lineHeight: Platform.OS === "web" ? 26 : 24,
     fontFamily: "Manrope_700Bold",
-    letterSpacing: -0.2,
-    color: "#1f275b",
-    marginBottom: 12,
+    letterSpacing: -0.35,
+    color: "#111827",
+    marginBottom: 4,
+    textAlign: "left",
+  },
+  sectionCaption: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontFamily: "Manrope_600SemiBold",
+    marginBottom: 10,
+    textAlign: "left",
+  },
+  categoryScroll: {
+    marginHorizontal: -2,
+  },
+  categoryScrollContent: {
+    paddingRight: 10,
+  },
+  categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+  categoryChipActive: {
+    backgroundColor: "#e8edff",
+    borderColor: "#84a0ff",
+  },
+  categoryChipIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  categoryChipText: {
+    fontSize: 14,
+    color: "#1f2937",
+    fontFamily: "Manrope_700Bold",
+  },
+  categoryChipTextActive: {
+    color: "#1d4ed8",
+    fontFamily: "Manrope_700Bold",
+  },
+  booksScroll: {
+    flex: 1,
+  },
+  booksScrollContent: {
+    paddingHorizontal: 0,
+    paddingRight: 0,
+  },
+  booksCarouselRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 0,
+  },
+  arrowSide: {
+    width: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  arrowButtonDisabled: {
+    opacity: 0.25,
+  },
+  arrowButtonText: {
+    fontSize: 30,
+    lineHeight: 30,
+    color: "#111827",
+    fontFamily: "Manrope_700Bold",
+    marginTop: -2,
+  },
+  bookCard: {
+    width: Platform.OS === "web" ? 170 : 150,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#ffffff",
+    padding: 4,
+    marginRight: 8,
+  },
+  bookCardActive: {
+    borderColor: "#7e99ff",
+    backgroundColor: "#edf2ff",
+  },
+  bookCoverPlaceholder: {
+    height: Platform.OS === "web" ? 220 : 190,
+    borderRadius: 10,
+    backgroundColor: "#e5e7eb",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bookCoverImage: {
+    height: Platform.OS === "web" ? 220 : 190,
+    width: "100%",
+    borderRadius: 10,
+    backgroundColor: "#e5e7eb",
+  },
+  bookCoverPlaceholderText: {
+    fontSize: 28,
+    color: "#374151",
+    fontFamily: "Manrope_700Bold",
+    letterSpacing: 0.5,
+  },
+  selectedBookMeta: {
+    marginTop: 10,
+    fontSize: 13,
+    color: "#4b5563",
+    fontFamily: "Manrope_600SemiBold",
   },
   goalRow: {
     borderRadius: 12,
@@ -691,25 +904,35 @@ const styles = StyleSheet.create({
     color: "#6875a8",
   },
   startButton: {
-    borderRadius: 14,
-    backgroundColor: "#3d4fd0",
-    paddingVertical: Platform.OS === "web" ? 12 : 14,
-    paddingHorizontal: 30,
+    borderRadius: 999,
+    backgroundColor: "#1665f5",
+    paddingVertical: Platform.OS === "web" ? 13 : 14,
+    paddingHorizontal: 28,
+    minWidth: Platform.OS === "web" ? 260 : 220,
+    alignSelf: "center",
     alignItems: "center",
-    marginTop: 4,
-    shadowColor: "#2f41c7",
-    shadowOpacity: 0.35,
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 2,
+    shadowColor: "#1665f5",
+    shadowOpacity: 0.25,
     shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 5 },
     elevation: 6,
-    borderWidth: 1,
-    borderColor: "#5870ea",
+    borderWidth: 0,
   },
   startText: {
     color: "#ffffff",
     fontSize: Platform.OS === "web" ? 16 : 16,
     fontFamily: "Manrope_700Bold",
-    letterSpacing: 0.1,
+    letterSpacing: 0,
+  },
+  startArrow: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontFamily: "Manrope_700Bold",
+    marginTop: -1,
   },
   logoutButton: {
     marginTop: 10,
